@@ -1,0 +1,129 @@
+.main {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.card {
+  background: #24283b;
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  max-width: 400px;
+  width: 100%;
+  outline: none;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.navBtn {
+  background: #414868;
+  border: none;
+  color: #c0caf5;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.navBtn:hover {
+  background: #565f89;
+}
+
+.navBtn:focus-visible {
+  outline: 2px solid #7aa2f7;
+  outline-offset: 2px;
+}
+
+.todayBtn {
+  background: #414868;
+  border: none;
+  color: #a9b1d6;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.todayBtn:hover {
+  background: #565f89;
+}
+
+.todayBtn:focus-visible {
+  outline: 2px solid #7aa2f7;
+  outline-offset: 2px;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #a9b1d6;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #565f89;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.dayCurrent {
+  color: #c0caf5;
+}
+
+.dayCurrent:hover {
+  background: rgba(122, 162, 247, 0.15);
+}
+
+.dayOther {
+  color: #565f89;
+}
+
+.dayToday {
+  background: #7aa2f7;
+  color: #1a1b26;
+  font-weight: 700;
+}
+
+.dayToday:hover {
+  background: #89b4fa;
+}

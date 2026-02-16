@@ -1,0 +1,288 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #c0caf5;
+}
+
+/* Mode Tabs */
+.modes {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.modeBtn {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #24283b;
+  color: #565f89;
+  transition: background 0.25s, color 0.25s;
+}
+
+.modeBtn:hover {
+  color: #c0caf5;
+}
+
+.modeBtnActive {
+  composes: modeBtn;
+}
+
+.modeBtnActive[data-mode="focus"] {
+  background: rgba(187, 154, 247, 0.15);
+  color: #bb9af7;
+}
+
+.modeBtnActive[data-mode="shortBreak"] {
+  background: rgba(158, 206, 106, 0.15);
+  color: #9ece6a;
+}
+
+.modeBtnActive[data-mode="longBreak"] {
+  background: rgba(122, 162, 247, 0.15);
+  color: #7aa2f7;
+}
+
+/* Timer Ring */
+.timerWrapper {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin-bottom: 1.5rem;
+}
+
+.timerSvg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.trackRing {
+  fill: none;
+  stroke: #24283b;
+  stroke-width: 8;
+}
+
+.progressRing {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s linear, stroke 0.4s;
+}
+
+.timerDisplay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.time {
+  font-size: 3.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #c0caf5;
+}
+
+.modeLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.25rem;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.controlBtn {
+  padding: 0.6rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.controlBtn:active {
+  transform: scale(0.97);
+}
+
+.startBtn {
+  composes: controlBtn;
+  color: #1a1b26;
+}
+
+.resetBtn {
+  composes: controlBtn;
+  background: #24283b;
+  color: #565f89;
+}
+
+.resetBtn:hover {
+  color: #c0caf5;
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stat {
+  text-align: center;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #c0caf5;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: #565f89;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Task List */
+.taskSection {
+  width: 100%;
+}
+
+.taskHeader {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #c0caf5;
+  margin-bottom: 0.75rem;
+}
+
+.taskForm {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.taskInput {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #24283b;
+  border-radius: 8px;
+  background: #24283b;
+  color: #c0caf5;
+  font-family: inherit;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.taskInput:focus {
+  border-color: #bb9af7;
+}
+
+.addBtn {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #bb9af7;
+  color: #1a1b26;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.addBtn:hover {
+  opacity: 0.85;
+}
+
+.taskList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: #24283b;
+  border-radius: 8px;
+}
+
+.taskCheckbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #bb9af7;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.taskText {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #c0caf5;
+}
+
+.taskTextDone {
+  composes: taskText;
+  text-decoration: line-through;
+  color: #565f89;
+}
+
+.pomCount {
+  font-size: 0.75rem;
+  color: #bb9af7;
+  white-space: nowrap;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: #565f89;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.25rem;
+  transition: color 0.2s;
+}
+
+.deleteBtn:hover {
+  color: #f7768e;
+}
+
+.hint {
+  text-align: center;
+  font-size: 0.7rem;
+  color: #565f89;
+  margin-top: 1.5rem;
+}
