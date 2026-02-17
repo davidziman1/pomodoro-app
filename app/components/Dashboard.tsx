@@ -450,6 +450,22 @@ export default function Dashboard() {
     [user, tasks, supabase]
   );
 
+  const renameTask = useCallback(
+    async (id: number, text: string) => {
+      if (!user) return;
+      await supabase
+        .from("tasks")
+        .update({ text })
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, text } : t))
+      );
+    },
+    [user, supabase]
+  );
+
   const updateTaskDescription = useCallback(
     async (id: number, description: string) => {
       if (!user) return;
@@ -689,6 +705,7 @@ export default function Dashboard() {
             onToggleTask={toggleTask}
             onDeleteTask={deleteTask}
             onReorderTasks={reorderTasks}
+            onRenameTask={renameTask}
             onUpdateDescription={updateTaskDescription}
             onFocusComplete={onFocusComplete}
           />

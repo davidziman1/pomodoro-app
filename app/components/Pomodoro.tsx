@@ -68,6 +68,7 @@ interface PomodoroProps {
   onToggleTask: (id: number) => void;
   onDeleteTask: (id: number) => void;
   onReorderTasks: (fromIndex: number, toIndex: number) => void;
+  onRenameTask: (id: number, text: string) => void;
   onUpdateDescription: (id: number, description: string) => void;
   onFocusComplete: () => void;
 }
@@ -80,6 +81,7 @@ export default function Pomodoro({
   onToggleTask,
   onDeleteTask,
   onReorderTasks,
+  onRenameTask,
   onUpdateDescription,
   onFocusComplete,
 }: PomodoroProps) {
@@ -92,6 +94,8 @@ export default function Pomodoro({
   const [completedOpen, setCompletedOpen] = useState(true);
   const [timerVisible, setTimerVisible] = useState(true);
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState("");
 
   const focusCompleteRef = useRef(onFocusComplete);
   focusCompleteRef.current = onFocusComplete;
@@ -356,7 +360,38 @@ export default function Pomodoro({
                     checked={task.completed}
                     onChange={() => onToggleTask(task.id)}
                   />
-                  <span className={styles.taskText}>{task.text}</span>
+                  {editingTaskId === task.id ? (
+                    <input
+                      className={styles.taskEditInput}
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onBlur={() => {
+                        const trimmed = editingText.trim();
+                        if (trimmed && trimmed !== task.text) {
+                          onRenameTask(task.id, trimmed);
+                        }
+                        setEditingTaskId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          (e.target as HTMLInputElement).blur();
+                        } else if (e.key === "Escape") {
+                          setEditingTaskId(null);
+                        }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span
+                      className={styles.taskText}
+                      onClick={() => {
+                        setEditingTaskId(task.id);
+                        setEditingText(task.text);
+                      }}
+                    >
+                      {task.text}
+                    </span>
+                  )}
                   {task.pomodorosSpent > 0 && (
                     <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
                   )}
@@ -411,7 +446,38 @@ export default function Pomodoro({
                           checked={task.completed}
                           onChange={() => onToggleTask(task.id)}
                         />
-                        <span className={styles.taskTextDone}>{task.text}</span>
+                        {editingTaskId === task.id ? (
+                          <input
+                            className={styles.taskEditInput}
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            onBlur={() => {
+                              const trimmed = editingText.trim();
+                              if (trimmed && trimmed !== task.text) {
+                                onRenameTask(task.id, trimmed);
+                              }
+                              setEditingTaskId(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                (e.target as HTMLInputElement).blur();
+                              } else if (e.key === "Escape") {
+                                setEditingTaskId(null);
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span
+                            className={styles.taskTextDone}
+                            onClick={() => {
+                              setEditingTaskId(task.id);
+                              setEditingText(task.text);
+                            }}
+                          >
+                            {task.text}
+                          </span>
+                        )}
                         {task.pomodorosSpent > 0 && (
                           <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
                         )}
@@ -420,7 +486,7 @@ export default function Pomodoro({
                           onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
                           title="Toggle notes"
                         >
-                          ▼
+                          {isExpanded ? "▾" : "✎"}
                         </button>
                         <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
                           ×
