@@ -78,6 +78,7 @@ interface PomodoroProps {
   onUpdateSectionColor: (id: number, color: string) => void;
   onDeleteSection: (id: number) => void;
   onUpdateTaskSection: (taskId: number, sectionId: number | null) => void;
+  onReorderSections: (fromIndex: number, toIndex: number) => void;
 }
 
 export default function Pomodoro({
@@ -97,6 +98,7 @@ export default function Pomodoro({
   onUpdateSectionColor,
   onDeleteSection,
   onUpdateTaskSection,
+  onReorderSections,
 }: PomodoroProps) {
   const [mode, setMode] = useState<Mode>("focus");
   const [timeLeft, setTimeLeft] = useState(DURATIONS.focus);
@@ -114,6 +116,9 @@ export default function Pomodoro({
   const [renamingSectionText, setRenamingSectionText] = useState("");
   const [colorPickerSectionId, setColorPickerSectionId] = useState<number | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [dragOverSectionId, setDragOverSectionId] = useState<number | null | undefined>(undefined);
+  const [dragSectionIndex, setDragSectionIndex] = useState<number | null>(null);
+  const [dragOverSectionIndex, setDragOverSectionIndex] = useState<number | null>(null);
   const [uncategorizedName, setUncategorizedName] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("pomo-uncategorized-name") || "Uncategorized";
@@ -347,7 +352,34 @@ export default function Pomodoro({
           const uncategorized = incompleteTasks.filter((t) => t.sectionId == null);
           const isCollapsed = collapsedSections.has("uncategorized");
           return (
-            <div className={styles.sectionGroup}>
+            <div
+              className={[styles.sectionGroup, dragOverSectionId === null ? styles.sectionDragOver : ""].filter(Boolean).join(" ")}
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes("application/pomo-task")) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragOverSectionId(null);
+                }
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setDragOverSectionId(undefined);
+                }
+              }}
+              onDrop={(e) => {
+                if (e.dataTransfer.types.includes("application/pomo-task")) {
+                  e.preventDefault();
+                  const taskId = Number(e.dataTransfer.getData("application/pomo-task"));
+                  const task = tasks.find((t) => t.id === taskId);
+                  if (task && task.sectionId !== null) {
+                    onUpdateTaskSection(taskId, null);
+                  }
+                  setDragOverSectionId(undefined);
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }
+              }}
+            >
               <div className={styles.sectionHeader}>
                 <button
                   className={styles.sectionCollapseBtn}
@@ -471,12 +503,74 @@ export default function Pomodoro({
         })()}
 
         {/* Named Sections */}
-        {sections.map((section) => {
+        {sections.map((section, sectionIdx) => {
           const sectionIncompleteTasks = incompleteTasks.filter((t) => t.sectionId === section.id);
           const isCollapsed = collapsedSections.has(`section-${section.id}`);
           return (
-            <div key={section.id} className={styles.sectionGroup}>
-              <div className={styles.sectionHeader}>
+            <div
+              key={section.id}
+              className={[styles.sectionGroup, dragOverSectionId === section.id ? styles.sectionDragOver : ""].filter(Boolean).join(" ")}
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes("application/pomo-task")) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragOverSectionId(section.id);
+                }
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setDragOverSectionId(undefined);
+                }
+              }}
+              onDrop={(e) => {
+                if (e.dataTransfer.types.includes("application/pomo-task")) {
+                  e.preventDefault();
+                  const taskId = Number(e.dataTransfer.getData("application/pomo-task"));
+                  const task = tasks.find((t) => t.id === taskId);
+                  if (task && task.sectionId !== section.id) {
+                    onUpdateTaskSection(taskId, section.id);
+                  }
+                  setDragOverSectionId(undefined);
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }
+              }}
+            >
+              <div
+                className={[
+                  styles.sectionHeader,
+                  dragSectionIndex === sectionIdx ? styles.sectionHeaderDragging : "",
+                  dragOverSectionIndex === sectionIdx ? styles.sectionHeaderDragOver : "",
+                ].filter(Boolean).join(" ")}
+                draggable
+                onDragStart={(e) => {
+                  setDragSectionIndex(sectionIdx);
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("application/pomo-section", String(sectionIdx));
+                }}
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes("application/pomo-section")) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    setDragOverSectionIndex(sectionIdx);
+                  }
+                }}
+                onDragLeave={() => setDragOverSectionIndex(null)}
+                onDrop={(e) => {
+                  if (e.dataTransfer.types.includes("application/pomo-section")) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const fromIdx = Number(e.dataTransfer.getData("application/pomo-section"));
+                    if (fromIdx !== sectionIdx) {
+                      onReorderSections(fromIdx, sectionIdx);
+                    }
+                    setDragSectionIndex(null);
+                    setDragOverSectionIndex(null);
+                  }
+                }}
+                onDragEnd={() => { setDragSectionIndex(null); setDragOverSectionIndex(null); }}
+              >
+                <span className={styles.sectionDragHandle}>⠿</span>
                 <button
                   className={styles.sectionCollapseBtn}
                   onClick={() => toggleSectionCollapse(`section-${section.id}`)}

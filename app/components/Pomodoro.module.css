@@ -590,6 +590,39 @@
   opacity: 0.8;
 }
 
+/* Section drag-and-drop */
+.sectionDragOver {
+  outline: 2px dashed var(--accent-purple);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.sectionDragHandle {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sectionDragHandle:active {
+  cursor: grabbing;
+}
+
+.sectionHeader:hover .sectionDragHandle {
+  opacity: 1;
+}
+
+.sectionHeaderDragging {
+  opacity: 0.4;
+}
+
+.sectionHeaderDragOver {
+  border-bottom: 2px solid var(--accent-purple);
+}
+
 .hint {
   text-align: center;
   font-size: 0.7rem;

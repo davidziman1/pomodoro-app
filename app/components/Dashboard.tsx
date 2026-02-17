@@ -578,6 +578,29 @@ export default function Dashboard() {
     [user, supabase]
   );
 
+  const reorderSections = useCallback(
+    async (fromIndex: number, toIndex: number) => {
+      if (!user) return;
+      const reordered = [...sections];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndex, 0, moved);
+
+      const updated = reordered.map((s, i) => ({ ...s, sortOrder: i }));
+      setSections(updated);
+
+      await Promise.all(
+        updated.map((s) =>
+          supabase
+            .from("sections")
+            .update({ sort_order: s.sortOrder })
+            .eq("id", s.id)
+            .eq("user_id", user.id)
+        )
+      );
+    },
+    [user, sections, supabase]
+  );
+
   const updateTaskSection = useCallback(
     async (taskId: number, sectionId: number | null) => {
       if (!user) return;
@@ -823,6 +846,7 @@ export default function Dashboard() {
             onUpdateSectionColor={updateSectionColor}
             onDeleteSection={deleteSection}
             onUpdateTaskSection={updateTaskSection}
+            onReorderSections={reorderSections}
           />
         </main>
         <aside className={styles.calendarPane}>
