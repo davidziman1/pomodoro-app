@@ -295,18 +295,6 @@ export default function Calendar({
               </option>
             ))}
           </select>
-          <select
-            className={styles.selector}
-            value={dropdownDay}
-            onChange={handleDayChange}
-            aria-label="Day"
-          >
-            {dayOptions.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
           {!isCurrentMonth && (
             <button
               type="button"
