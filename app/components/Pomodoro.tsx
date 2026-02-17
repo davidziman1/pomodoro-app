@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import styles from "./Pomodoro.module.css";
 import type { Task, Stats } from "./Dashboard";
+import TaskNotes from "./TaskNotes";
 
 type Mode = "focus" | "shortBreak" | "longBreak";
 
@@ -67,6 +68,7 @@ interface PomodoroProps {
   onToggleTask: (id: number) => void;
   onDeleteTask: (id: number) => void;
   onReorderTasks: (fromIndex: number, toIndex: number) => void;
+  onUpdateDescription: (id: number, description: string) => void;
   onFocusComplete: () => void;
 }
 
@@ -78,6 +80,7 @@ export default function Pomodoro({
   onToggleTask,
   onDeleteTask,
   onReorderTasks,
+  onUpdateDescription,
   onFocusComplete,
 }: PomodoroProps) {
   const [mode, setMode] = useState<Mode>("focus");
@@ -87,6 +90,7 @@ export default function Pomodoro({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [completedOpen, setCompletedOpen] = useState(true);
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
 
   const focusCompleteRef = useRef(onFocusComplete);
   focusCompleteRef.current = onFocusComplete;
@@ -297,55 +301,72 @@ export default function Pomodoro({
         <ul className={styles.taskList}>
           {incompleteTasks.map((task) => {
             const originalIndex = tasks.indexOf(task);
+            const isExpanded = expandedTaskId === task.id;
             return (
-              <li
-                key={task.id}
-                className={[
-                  styles.taskItem,
-                  dragIndex === originalIndex ? styles.taskItemDragging : "",
-                  dragOverIndex === originalIndex ? styles.taskItemDragOver : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                draggable
-                onDragStart={(e) => {
-                  setDragIndex(originalIndex);
-                  e.dataTransfer.effectAllowed = "move";
-                  e.dataTransfer.setData("application/pomo-task", String(task.id));
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = "move";
-                  setDragOverIndex(originalIndex);
-                }}
-                onDragLeave={() => setDragOverIndex(null)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragIndex !== null && dragIndex !== originalIndex) {
-                    onReorderTasks(dragIndex, originalIndex);
-                  }
-                  setDragIndex(null);
-                  setDragOverIndex(null);
-                }}
-                onDragEnd={() => {
-                  setDragIndex(null);
-                  setDragOverIndex(null);
-                }}
-              >
-                <span className={styles.dragHandle}>⠿</span>
-                <input
-                  type="checkbox"
-                  className={styles.taskCheckbox}
-                  checked={task.completed}
-                  onChange={() => onToggleTask(task.id)}
-                />
-                <span className={styles.taskText}>{task.text}</span>
-                {task.pomodorosSpent > 0 && (
-                  <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
+              <li key={task.id} className={styles.taskItemWrapper}>
+                <div
+                  className={[
+                    styles.taskItem,
+                    dragIndex === originalIndex ? styles.taskItemDragging : "",
+                    dragOverIndex === originalIndex ? styles.taskItemDragOver : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  draggable
+                  onDragStart={(e) => {
+                    setDragIndex(originalIndex);
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("application/pomo-task", String(task.id));
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    setDragOverIndex(originalIndex);
+                  }}
+                  onDragLeave={() => setDragOverIndex(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragIndex !== null && dragIndex !== originalIndex) {
+                      onReorderTasks(dragIndex, originalIndex);
+                    }
+                    setDragIndex(null);
+                    setDragOverIndex(null);
+                  }}
+                  onDragEnd={() => {
+                    setDragIndex(null);
+                    setDragOverIndex(null);
+                  }}
+                >
+                  <span className={styles.dragHandle}>⠿</span>
+                  <input
+                    type="checkbox"
+                    className={styles.taskCheckbox}
+                    checked={task.completed}
+                    onChange={() => onToggleTask(task.id)}
+                  />
+                  <span className={styles.taskText}>{task.text}</span>
+                  {task.pomodorosSpent > 0 && (
+                    <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
+                  )}
+                  <button
+                    className={isExpanded ? styles.notesToggleActive : styles.notesToggle}
+                    onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                    title="Toggle notes"
+                  >
+                    ▼
+                  </button>
+                  <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
+                    ×
+                  </button>
+                </div>
+                {isExpanded && (
+                  <div className={styles.notesPanel}>
+                    <TaskNotes
+                      description={task.description}
+                      onSave={(html) => onUpdateDescription(task.id, html)}
+                    />
+                  </div>
                 )}
-                <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
-                  ×
-                </button>
               </li>
             );
           })}
@@ -367,29 +388,50 @@ export default function Pomodoro({
             </div>
             {completedOpen && (
               <ul className={styles.completedList}>
-                {completedTasks.map((task) => (
-                  <li key={task.id} className={styles.completedTaskItem}>
-                    <input
-                      type="checkbox"
-                      className={styles.taskCheckbox}
-                      checked={task.completed}
-                      onChange={() => onToggleTask(task.id)}
-                    />
-                    <span className={styles.taskTextDone}>{task.text}</span>
-                    {task.pomodorosSpent > 0 && (
-                      <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
-                    )}
-                    <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
-                      ×
-                    </button>
-                  </li>
-                ))}
+                {completedTasks.map((task) => {
+                  const isExpanded = expandedTaskId === task.id;
+                  return (
+                    <li key={task.id} className={styles.taskItemWrapper}>
+                      <div className={styles.completedTaskItem}>
+                        <input
+                          type="checkbox"
+                          className={styles.taskCheckbox}
+                          checked={task.completed}
+                          onChange={() => onToggleTask(task.id)}
+                        />
+                        <span className={styles.taskTextDone}>{task.text}</span>
+                        {task.pomodorosSpent > 0 && (
+                          <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
+                        )}
+                        <button
+                          className={isExpanded ? styles.notesToggleActive : styles.notesToggle}
+                          onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                          title="Toggle notes"
+                        >
+                          ▼
+                        </button>
+                        <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
+                          ×
+                        </button>
+                      </div>
+                      {isExpanded && (
+                        <div className={styles.notesPanel}>
+                          <TaskNotes
+                            description={task.description}
+                            onSave={(html) => onUpdateDescription(task.id, html)}
+                          />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
         )}
       </section>
 
+      <p className={styles.hint}>Drag tasks to calendar dates to reschedule</p>
       <p className={styles.hint}>Space to start/pause · R to reset</p>
     </div>
   );

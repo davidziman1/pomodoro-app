@@ -20,6 +20,7 @@ export interface Task {
   scheduledDate: string;
   completedAt: string | null;
   sortOrder: number;
+  description: string;
 }
 
 export interface Stats {
@@ -151,6 +152,7 @@ export default function Dashboard() {
         scheduledDate: t.scheduled_date,
         completedAt: t.completed_at,
         sortOrder: t.sort_order ?? 0,
+        description: t.description ?? "",
       }));
 
       if (hasSortOrder.current) {
@@ -242,6 +244,7 @@ export default function Dashboard() {
               scheduledDate: t.scheduled_date,
               completedAt: t.completed_at,
               sortOrder: t.sort_order ?? 0,
+              description: t.description ?? "",
             }))
           );
           setShowPlanModal(true);
@@ -329,6 +332,7 @@ export default function Dashboard() {
                 scheduledDate: retryData.scheduled_date,
                 completedAt: retryData.completed_at,
                 sortOrder: 0,
+                description: retryData.description ?? "",
               },
             ]);
             setTaskCountsByDate((prev) => {
@@ -354,6 +358,7 @@ export default function Dashboard() {
             scheduledDate: data.scheduled_date,
             completedAt: data.completed_at,
             sortOrder: data.sort_order ?? 0,
+            description: data.description ?? "",
           },
         ]);
         setTaskCountsByDate((prev) => {
@@ -443,6 +448,22 @@ export default function Dashboard() {
       );
     },
     [user, tasks, supabase]
+  );
+
+  const updateTaskDescription = useCallback(
+    async (id: number, description: string) => {
+      if (!user) return;
+      await supabase
+        .from("tasks")
+        .update({ description })
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, description } : t))
+      );
+    },
+    [user, supabase]
   );
 
   const handleCarryForward = useCallback(
@@ -668,6 +689,7 @@ export default function Dashboard() {
             onToggleTask={toggleTask}
             onDeleteTask={deleteTask}
             onReorderTasks={reorderTasks}
+            onUpdateDescription={updateTaskDescription}
             onFocusComplete={onFocusComplete}
           />
         </main>

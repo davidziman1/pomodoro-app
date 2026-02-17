@@ -48,7 +48,9 @@ create table public.tasks (
   pomodoros_spent integer not null default 0,
   scheduled_date date not null,
   completed_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  sort_order integer not null default 0,
+  description text not null default ''
 );
 
 create index tasks_user_date_idx on public.tasks (user_id, scheduled_date);

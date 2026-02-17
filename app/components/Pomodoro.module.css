@@ -402,6 +402,39 @@
   border: 2px solid transparent;
 }
 
+/* Task Item Wrapper (for notes dropdown) */
+.taskItemWrapper {
+  list-style: none;
+}
+
+.notesToggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.6rem;
+  padding: 0 0.25rem;
+  transition: color 0.2s, transform 0.2s;
+  transform: rotate(-90deg);
+  opacity: 0.5;
+}
+
+.notesToggle:hover {
+  color: var(--text);
+  opacity: 1;
+}
+
+.notesToggleActive {
+  composes: notesToggle;
+  transform: rotate(0deg);
+  opacity: 1;
+  color: var(--accent-purple);
+}
+
+.notesPanel {
+  margin-top: 2px;
+}
+
 .hint {
   text-align: center;
   font-size: 0.7rem;

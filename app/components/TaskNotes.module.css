@@ -1,0 +1,101 @@
+.wrapper {
+  padding: 0.5rem 0.75rem 0.75rem;
+  background: var(--bg-card);
+  border-radius: 0 0 8px 8px;
+  margin-top: -4px;
+  border-top: 1px solid var(--border);
+}
+
+.toolbar {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.toolBtn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.45rem;
+  font-family: inherit;
+  line-height: 1.2;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toolBtn:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.toolBtnActive {
+  composes: toolBtn;
+  background: var(--bg);
+  color: var(--accent-purple);
+  border-color: var(--border);
+}
+
+.sizeSelect {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-family: inherit;
+  padding: 0.15rem 0.3rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.sizeSelect:focus {
+  border-color: var(--accent-purple);
+}
+
+.editor {
+  font-size: 0.85rem;
+  color: var(--text);
+  min-height: 60px;
+  max-height: 200px;
+  overflow-y: auto;
+  outline: none;
+}
+
+.editor :global(.ProseMirror) {
+  outline: none;
+  min-height: 60px;
+}
+
+.editor :global(.ProseMirror) p {
+  margin: 0.15em 0;
+}
+
+.editor :global(.ProseMirror) ul,
+.editor :global(.ProseMirror) ol {
+  padding-left: 1.4em;
+  margin: 0.15em 0;
+}
+
+.editor :global(.ProseMirror) li {
+  margin: 0.1em 0;
+}
+
+.editor :global(.ProseMirror) h1 {
+  font-size: 1.5em;
+  margin: 0.2em 0;
+}
+
+.editor :global(.ProseMirror) h2 {
+  font-size: 1.25em;
+  margin: 0.2em 0;
+}
+
+.editor :global(.ProseMirror) h3 {
+  font-size: 1.1em;
+  margin: 0.2em 0;
+}

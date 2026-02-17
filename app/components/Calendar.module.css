@@ -40,6 +40,39 @@
   outline-offset: 2px;
 }
 
+.navBtnDragOver {
+  background: rgba(187, 154, 247, 0.3);
+  outline: 2px solid var(--accent-purple);
+  outline-offset: -2px;
+}
+
+.selectors {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.selector {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 6px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.selector:focus {
+  border-color: var(--accent-purple);
+}
+
 .todayBtn {
   background: var(--bg-hover);
   border: none;
