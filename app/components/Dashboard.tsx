@@ -10,6 +10,7 @@ import ThemeToggle from "./ThemeToggle";
 import PlanMyDay from "./PlanMyDay";
 import ReschedulePrompt from "./ReschedulePrompt";
 import NamePrompt from "./NamePrompt";
+import StreakBadge from "./StreakBadge";
 import styles from "./Dashboard.module.css";
 
 export interface Task {
@@ -62,6 +63,7 @@ export default function Dashboard() {
   const [reschedulePrompt, setReschedulePrompt] = useState<{ date: string; incompleteTasks: Task[] } | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [streak, setStreak] = useState(0);
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const prevDateRef = useRef(selectedDate);
@@ -249,6 +251,43 @@ export default function Dashboard() {
     (async () => {
       await migrateLocalStorage();
       await Promise.all([fetchTasks(), fetchStats(), fetchSections()]);
+
+      // Upsert today's daily_stats row so visiting counts toward streak
+      const today = todayStr();
+      await supabase.from("daily_stats").upsert(
+        {
+          user_id: user.id,
+          date: today,
+          total_focus_minutes: 0,
+          sessions_completed: 0,
+        },
+        { onConflict: "user_id,date", ignoreDuplicates: true }
+      );
+
+      // Calculate streak from daily_stats dates
+      const { data: streakDates } = await supabase
+        .from("daily_stats")
+        .select("date")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false });
+
+      if (streakDates && streakDates.length > 0) {
+        const dateSet = new Set(streakDates.map((r: { date: string }) => r.date));
+        let count = 0;
+        const cursor = new Date();
+        // Start from today and count backwards
+        while (true) {
+          const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+          if (dateSet.has(key)) {
+            count++;
+            cursor.setDate(cursor.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+        setStreak(count);
+      }
+
       setLoading(false);
 
       // Check if user is missing a name
@@ -795,6 +834,7 @@ export default function Dashboard() {
             </h1>
           )}
           <ThemeToggle />
+          <StreakBadge streak={streak} />
         </div>
         <UserMenu />
       </header>
