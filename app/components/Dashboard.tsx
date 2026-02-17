@@ -21,6 +21,14 @@ export interface Task {
   completedAt: string | null;
   sortOrder: number;
   description: string;
+  sectionId: number | null;
+}
+
+export interface Section {
+  id: number;
+  name: string;
+  color: string;
+  sortOrder: number;
 }
 
 export interface Stats {
@@ -52,6 +60,7 @@ export default function Dashboard() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [carryoverTasks, setCarryoverTasks] = useState<Task[]>([]);
   const [reschedulePrompt, setReschedulePrompt] = useState<{ date: string; incompleteTasks: Task[] } | null>(null);
+  const [sections, setSections] = useState<Section[]>([]);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState("");
@@ -153,6 +162,7 @@ export default function Dashboard() {
         completedAt: t.completed_at,
         sortOrder: t.sort_order ?? 0,
         description: t.description ?? "",
+        sectionId: t.section_id ?? null,
       }));
 
       if (hasSortOrder.current) {
@@ -212,12 +222,33 @@ export default function Dashboard() {
     [user, supabase]
   );
 
+  // Fetch sections
+  const fetchSections = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("sections")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: true });
+
+    if (data) {
+      setSections(
+        data.map((s) => ({
+          id: s.id,
+          name: s.name,
+          color: s.color,
+          sortOrder: s.sort_order,
+        }))
+      );
+    }
+  }, [user, supabase]);
+
   // Initial load: migrate then fetch, check for Plan My Day
   useEffect(() => {
     if (!user) return;
     (async () => {
       await migrateLocalStorage();
-      await Promise.all([fetchTasks(), fetchStats()]);
+      await Promise.all([fetchTasks(), fetchStats(), fetchSections()]);
       setLoading(false);
 
       // Check if user is missing a name
@@ -245,6 +276,7 @@ export default function Dashboard() {
               completedAt: t.completed_at,
               sortOrder: t.sort_order ?? 0,
               description: t.description ?? "",
+              sectionId: t.section_id ?? null,
             }))
           );
           setShowPlanModal(true);
@@ -282,7 +314,7 @@ export default function Dashboard() {
   // --- Task CRUD ---
 
   const addTask = useCallback(
-    async (text: string) => {
+    async (text: string, sectionId?: number | null) => {
       if (!user) return;
 
       const insertObj: Record<string, unknown> = {
@@ -290,6 +322,10 @@ export default function Dashboard() {
         text,
         scheduled_date: selectedDate,
       };
+
+      if (sectionId != null) {
+        insertObj.section_id = sectionId;
+      }
 
       if (hasSortOrder.current) {
         insertObj.sort_order = tasks.length > 0
@@ -333,6 +369,7 @@ export default function Dashboard() {
                 completedAt: retryData.completed_at,
                 sortOrder: 0,
                 description: retryData.description ?? "",
+                sectionId: retryData.section_id ?? null,
               },
             ]);
             setTaskCountsByDate((prev) => {
@@ -359,6 +396,7 @@ export default function Dashboard() {
             completedAt: data.completed_at,
             sortOrder: data.sort_order ?? 0,
             description: data.description ?? "",
+            sectionId: data.section_id ?? null,
           },
         ]);
         setTaskCountsByDate((prev) => {
@@ -478,6 +516,77 @@ export default function Dashboard() {
       setTasks((prev) =>
         prev.map((t) => (t.id === id ? { ...t, description } : t))
       );
+    },
+    [user, supabase]
+  );
+
+  // --- Section CRUD ---
+
+  const addSection = useCallback(
+    async (name: string) => {
+      if (!user) return;
+      const nextOrder = sections.length > 0
+        ? Math.max(...sections.map((s) => s.sortOrder)) + 1
+        : 0;
+
+      const { data, error: insertError } = await supabase
+        .from("sections")
+        .insert({ user_id: user.id, name, sort_order: nextOrder })
+        .select()
+        .single();
+
+      if (insertError) {
+        setError("Failed to add section: " + insertError.message);
+        return;
+      }
+      if (data) {
+        setSections((prev) => [
+          ...prev,
+          { id: data.id, name: data.name, color: data.color, sortOrder: data.sort_order },
+        ]);
+      }
+    },
+    [user, sections, supabase]
+  );
+
+  const renameSection = useCallback(
+    async (id: number, name: string) => {
+      if (!user) return;
+      await supabase.from("sections").update({ name }).eq("id", id).eq("user_id", user.id);
+      setSections((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
+    },
+    [user, supabase]
+  );
+
+  const updateSectionColor = useCallback(
+    async (id: number, color: string) => {
+      if (!user) return;
+      await supabase.from("sections").update({ color }).eq("id", id).eq("user_id", user.id);
+      setSections((prev) => prev.map((s) => (s.id === id ? { ...s, color } : s)));
+    },
+    [user, supabase]
+  );
+
+  const deleteSection = useCallback(
+    async (id: number) => {
+      if (!user) return;
+      await supabase.from("sections").delete().eq("id", id).eq("user_id", user.id);
+      setSections((prev) => prev.filter((s) => s.id !== id));
+      // Tasks with this section_id get set to null via ON DELETE SET NULL
+      setTasks((prev) => prev.map((t) => (t.sectionId === id ? { ...t, sectionId: null } : t)));
+    },
+    [user, supabase]
+  );
+
+  const updateTaskSection = useCallback(
+    async (taskId: number, sectionId: number | null) => {
+      if (!user) return;
+      await supabase
+        .from("tasks")
+        .update({ section_id: sectionId })
+        .eq("id", taskId)
+        .eq("user_id", user.id);
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, sectionId } : t)));
     },
     [user, supabase]
   );
@@ -701,6 +810,7 @@ export default function Dashboard() {
             tasks={tasks}
             stats={stats}
             selectedDate={selectedDate}
+            sections={sections}
             onAddTask={addTask}
             onToggleTask={toggleTask}
             onDeleteTask={deleteTask}
@@ -708,6 +818,11 @@ export default function Dashboard() {
             onRenameTask={renameTask}
             onUpdateDescription={updateTaskDescription}
             onFocusComplete={onFocusComplete}
+            onAddSection={addSection}
+            onRenameSection={renameSection}
+            onUpdateSectionColor={updateSectionColor}
+            onDeleteSection={deleteSection}
+            onUpdateTaskSection={updateTaskSection}
           />
         </main>
         <aside className={styles.calendarPane}>

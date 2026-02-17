@@ -73,7 +73,38 @@ create policy "Users can delete own tasks"
   on public.tasks for delete
   using (auth.uid() = user_id);
 
--- 3. Daily stats table
+-- 3. Sections table (task categories)
+create table public.sections (
+  id bigserial primary key,
+  user_id uuid not null references auth.users on delete cascade,
+  name text not null,
+  color text not null default '#bb9af7',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table public.sections enable row level security;
+
+create policy "Users can view own sections"
+  on public.sections for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own sections"
+  on public.sections for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own sections"
+  on public.sections for update
+  using (auth.uid() = user_id);
+
+create policy "Users can delete own sections"
+  on public.sections for delete
+  using (auth.uid() = user_id);
+
+-- Add section_id to tasks
+alter table public.tasks add column section_id bigint references public.sections(id) on delete set null;
+
+-- 4. Daily stats table
 create table public.daily_stats (
   id bigserial primary key,
   user_id uuid not null references auth.users on delete cascade,

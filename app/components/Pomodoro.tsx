@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import styles from "./Pomodoro.module.css";
-import type { Task, Stats } from "./Dashboard";
+import type { Task, Stats, Section } from "./Dashboard";
 import TaskNotes from "./TaskNotes";
+import SectionColorPicker from "./SectionColorPicker";
 
 type Mode = "focus" | "shortBreak" | "longBreak";
 
@@ -64,19 +65,26 @@ interface PomodoroProps {
   tasks: Task[];
   stats: Stats;
   selectedDate: string;
-  onAddTask: (text: string) => void;
+  sections: Section[];
+  onAddTask: (text: string, sectionId?: number | null) => void;
   onToggleTask: (id: number) => void;
   onDeleteTask: (id: number) => void;
   onReorderTasks: (fromIndex: number, toIndex: number) => void;
   onRenameTask: (id: number, text: string) => void;
   onUpdateDescription: (id: number, description: string) => void;
   onFocusComplete: () => void;
+  onAddSection: (name: string) => void;
+  onRenameSection: (id: number, name: string) => void;
+  onUpdateSectionColor: (id: number, color: string) => void;
+  onDeleteSection: (id: number) => void;
+  onUpdateTaskSection: (taskId: number, sectionId: number | null) => void;
 }
 
 export default function Pomodoro({
   tasks,
   stats,
   selectedDate,
+  sections,
   onAddTask,
   onToggleTask,
   onDeleteTask,
@@ -84,6 +92,11 @@ export default function Pomodoro({
   onRenameTask,
   onUpdateDescription,
   onFocusComplete,
+  onAddSection,
+  onRenameSection,
+  onUpdateSectionColor,
+  onDeleteSection,
+  onUpdateTaskSection,
 }: PomodoroProps) {
   const [mode, setMode] = useState<Mode>("focus");
   const [timeLeft, setTimeLeft] = useState(DURATIONS.focus);
@@ -96,6 +109,11 @@ export default function Pomodoro({
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
+  const [sectionTasks, setSectionTasks] = useState<Record<number, string>>({});
+  const [renamingSectionId, setRenamingSectionId] = useState<number | null>(null);
+  const [renamingSectionText, setRenamingSectionText] = useState("");
+  const [colorPickerSectionId, setColorPickerSectionId] = useState<number | null>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
   const focusCompleteRef = useRef(onFocusComplete);
   focusCompleteRef.current = onFocusComplete;
@@ -156,12 +174,28 @@ export default function Pomodoro({
     return () => window.removeEventListener("keydown", onKey);
   }, [toggleTimer, resetTimer]);
 
-  const addTask = (e: React.FormEvent) => {
+  const addTask = (e: React.FormEvent, sectionId?: number | null) => {
     e.preventDefault();
-    const text = newTask.trim();
-    if (!text) return;
-    onAddTask(text);
-    setNewTask("");
+    if (sectionId != null) {
+      const text = (sectionTasks[sectionId] || "").trim();
+      if (!text) return;
+      onAddTask(text, sectionId);
+      setSectionTasks((prev) => ({ ...prev, [sectionId]: "" }));
+    } else {
+      const text = newTask.trim();
+      if (!text) return;
+      onAddTask(text);
+      setNewTask("");
+    }
+  };
+
+  const toggleSectionCollapse = (key: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   // Derived values
@@ -286,17 +320,6 @@ export default function Pomodoro({
         <h2 className={styles.taskHeader}>
           Tasks
         </h2>
-        <form className={styles.taskForm} onSubmit={addTask}>
-          <input
-            className={styles.taskInput}
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            placeholder="Add a task…"
-          />
-          <button type="submit" className={styles.addBtn}>
-            Add
-          </button>
-        </form>
 
         {/* Progress Bar */}
         {totalCount > 0 && (
@@ -313,111 +336,258 @@ export default function Pomodoro({
           </div>
         )}
 
-        {/* Incomplete Tasks */}
-        <ul className={styles.taskList}>
-          {incompleteTasks.map((task) => {
-            const originalIndex = tasks.indexOf(task);
-            const isExpanded = expandedTaskId === task.id;
-            return (
-              <li key={task.id} className={styles.taskItemWrapper}>
-                <div
-                  className={[
-                    styles.taskItem,
-                    dragIndex === originalIndex ? styles.taskItemDragging : "",
-                    dragOverIndex === originalIndex ? styles.taskItemDragOver : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  draggable
-                  onDragStart={(e) => {
-                    setDragIndex(originalIndex);
-                    e.dataTransfer.effectAllowed = "move";
-                    e.dataTransfer.setData("application/pomo-task", String(task.id));
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    setDragOverIndex(originalIndex);
-                  }}
-                  onDragLeave={() => setDragOverIndex(null)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (dragIndex !== null && dragIndex !== originalIndex) {
-                      onReorderTasks(dragIndex, originalIndex);
-                    }
-                    setDragIndex(null);
-                    setDragOverIndex(null);
-                  }}
-                  onDragEnd={() => {
-                    setDragIndex(null);
-                    setDragOverIndex(null);
-                  }}
+        {/* Uncategorized Section */}
+        {(() => {
+          const uncategorized = incompleteTasks.filter((t) => t.sectionId == null);
+          const isCollapsed = collapsedSections.has("uncategorized");
+          return (
+            <div className={styles.sectionGroup}>
+              <div className={styles.sectionHeader}>
+                <button
+                  className={styles.sectionCollapseBtn}
+                  onClick={() => toggleSectionCollapse("uncategorized")}
                 >
-                  <span className={styles.dragHandle}>⠿</span>
-                  <input
-                    type="checkbox"
-                    className={styles.taskCheckbox}
-                    checked={task.completed}
-                    onChange={() => onToggleTask(task.id)}
-                  />
-                  {editingTaskId === task.id ? (
+                  <span className={isCollapsed ? styles.completedArrow : styles.completedArrowOpen}>▶</span>
+                </button>
+                <span className={styles.sectionDot} style={{ background: "var(--text-muted)" }} />
+                <span className={styles.sectionName}>Uncategorized</span>
+              </div>
+              {!isCollapsed && (
+                <>
+                  <form className={styles.taskForm} onSubmit={(e) => addTask(e)}>
                     <input
-                      className={styles.taskEditInput}
-                      value={editingText}
-                      onChange={(e) => setEditingText(e.target.value)}
-                      onBlur={() => {
-                        const trimmed = editingText.trim();
-                        if (trimmed && trimmed !== task.text) {
-                          onRenameTask(task.id, trimmed);
-                        }
-                        setEditingTaskId(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          (e.target as HTMLInputElement).blur();
-                        } else if (e.key === "Escape") {
-                          setEditingTaskId(null);
-                        }
-                      }}
-                      autoFocus
+                      className={styles.taskInput}
+                      value={newTask}
+                      onChange={(e) => setNewTask(e.target.value)}
+                      placeholder="Add a task…"
                     />
-                  ) : (
-                    <span
-                      className={styles.taskText}
-                      onClick={() => {
-                        setEditingTaskId(task.id);
-                        setEditingText(task.text);
-                      }}
-                    >
-                      {task.text}
-                    </span>
-                  )}
-                  {task.pomodorosSpent > 0 && (
-                    <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
-                  )}
+                    <button type="submit" className={styles.addBtn}>Add</button>
+                  </form>
+                  <ul className={styles.taskList}>
+                    {uncategorized.map((task) => {
+                      const originalIndex = tasks.indexOf(task);
+                      const isExpanded = expandedTaskId === task.id;
+                      return (
+                        <li key={task.id} className={styles.taskItemWrapper}>
+                          <div
+                            className={[
+                              styles.taskItem,
+                              dragIndex === originalIndex ? styles.taskItemDragging : "",
+                              dragOverIndex === originalIndex ? styles.taskItemDragOver : "",
+                            ].filter(Boolean).join(" ")}
+                            draggable
+                            onDragStart={(e) => {
+                              setDragIndex(originalIndex);
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("application/pomo-task", String(task.id));
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = "move";
+                              setDragOverIndex(originalIndex);
+                            }}
+                            onDragLeave={() => setDragOverIndex(null)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (dragIndex !== null && dragIndex !== originalIndex) {
+                                onReorderTasks(dragIndex, originalIndex);
+                              }
+                              setDragIndex(null);
+                              setDragOverIndex(null);
+                            }}
+                            onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                          >
+                            <span className={styles.dragHandle}>⠿</span>
+                            <input type="checkbox" className={styles.taskCheckbox} checked={task.completed} onChange={() => onToggleTask(task.id)} />
+                            {editingTaskId === task.id ? (
+                              <input
+                                className={styles.taskEditInput}
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                onBlur={() => {
+                                  const trimmed = editingText.trim();
+                                  if (trimmed && trimmed !== task.text) onRenameTask(task.id, trimmed);
+                                  setEditingTaskId(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                  else if (e.key === "Escape") setEditingTaskId(null);
+                                }}
+                                autoFocus
+                              />
+                            ) : (
+                              <span className={styles.taskText} onClick={() => { setEditingTaskId(task.id); setEditingText(task.text); }}>{task.text}</span>
+                            )}
+                            {task.pomodorosSpent > 0 && <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>}
+                            <button className={isExpanded ? styles.notesToggleActive : styles.notesToggle} onClick={() => setExpandedTaskId(isExpanded ? null : task.id)} title="Toggle notes">
+                              {isExpanded ? "▾" : "✎"}
+                            </button>
+                            <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>×</button>
+                          </div>
+                          {isExpanded && (
+                            <div className={styles.notesPanel}>
+                              <TaskNotes description={task.description} onSave={(html) => onUpdateDescription(task.id, html)} />
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Named Sections */}
+        {sections.map((section) => {
+          const sectionIncompleteTasks = incompleteTasks.filter((t) => t.sectionId === section.id);
+          const isCollapsed = collapsedSections.has(`section-${section.id}`);
+          return (
+            <div key={section.id} className={styles.sectionGroup}>
+              <div className={styles.sectionHeader}>
+                <button
+                  className={styles.sectionCollapseBtn}
+                  onClick={() => toggleSectionCollapse(`section-${section.id}`)}
+                >
+                  <span className={isCollapsed ? styles.completedArrow : styles.completedArrowOpen}>▶</span>
+                </button>
+                <div style={{ position: "relative" }}>
                   <button
-                    className={isExpanded ? styles.notesToggleActive : styles.notesToggle}
-                    onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                    title="Toggle notes"
-                  >
-                    {isExpanded ? "▾" : "✎"}
-                  </button>
-                  <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
-                    ×
-                  </button>
-                </div>
-                {isExpanded && (
-                  <div className={styles.notesPanel}>
-                    <TaskNotes
-                      description={task.description}
-                      onSave={(html) => onUpdateDescription(task.id, html)}
+                    className={styles.sectionDot}
+                    style={{ background: section.color }}
+                    onClick={() => setColorPickerSectionId(colorPickerSectionId === section.id ? null : section.id)}
+                    title="Change color"
+                  />
+                  {colorPickerSectionId === section.id && (
+                    <SectionColorPicker
+                      currentColor={section.color}
+                      onSelectColor={(hex) => onUpdateSectionColor(section.id, hex)}
+                      onClose={() => setColorPickerSectionId(null)}
                     />
-                  </div>
+                  )}
+                </div>
+                {renamingSectionId === section.id ? (
+                  <input
+                    className={styles.sectionNameInput}
+                    value={renamingSectionText}
+                    onChange={(e) => setRenamingSectionText(e.target.value)}
+                    onBlur={() => {
+                      const trimmed = renamingSectionText.trim();
+                      if (trimmed && trimmed !== section.name) onRenameSection(section.id, trimmed);
+                      setRenamingSectionId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      else if (e.key === "Escape") setRenamingSectionId(null);
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className={styles.sectionName}
+                    onClick={() => { setRenamingSectionId(section.id); setRenamingSectionText(section.name); }}
+                    title="Click to rename"
+                  >
+                    {section.name}
+                  </span>
                 )}
-              </li>
-            );
-          })}
-        </ul>
+                <button className={styles.sectionDeleteBtn} onClick={() => onDeleteSection(section.id)} title="Delete section">×</button>
+              </div>
+              {!isCollapsed && (
+                <>
+                  <form className={styles.taskForm} onSubmit={(e) => addTask(e, section.id)}>
+                    <input
+                      className={styles.taskInput}
+                      value={sectionTasks[section.id] || ""}
+                      onChange={(e) => setSectionTasks((prev) => ({ ...prev, [section.id]: e.target.value }))}
+                      placeholder={`Add task to ${section.name}…`}
+                    />
+                    <button type="submit" className={styles.addBtn}>Add</button>
+                  </form>
+                  <ul className={styles.taskList}>
+                    {sectionIncompleteTasks.map((task) => {
+                      const originalIndex = tasks.indexOf(task);
+                      const isExpanded = expandedTaskId === task.id;
+                      return (
+                        <li key={task.id} className={styles.taskItemWrapper}>
+                          <div
+                            className={[
+                              styles.taskItem,
+                              dragIndex === originalIndex ? styles.taskItemDragging : "",
+                              dragOverIndex === originalIndex ? styles.taskItemDragOver : "",
+                            ].filter(Boolean).join(" ")}
+                            draggable
+                            onDragStart={(e) => {
+                              setDragIndex(originalIndex);
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("application/pomo-task", String(task.id));
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = "move";
+                              setDragOverIndex(originalIndex);
+                            }}
+                            onDragLeave={() => setDragOverIndex(null)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (dragIndex !== null && dragIndex !== originalIndex) {
+                                onReorderTasks(dragIndex, originalIndex);
+                              }
+                              setDragIndex(null);
+                              setDragOverIndex(null);
+                            }}
+                            onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                          >
+                            <span className={styles.dragHandle}>⠿</span>
+                            <input type="checkbox" className={styles.taskCheckbox} checked={task.completed} onChange={() => onToggleTask(task.id)} />
+                            {editingTaskId === task.id ? (
+                              <input
+                                className={styles.taskEditInput}
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                onBlur={() => {
+                                  const trimmed = editingText.trim();
+                                  if (trimmed && trimmed !== task.text) onRenameTask(task.id, trimmed);
+                                  setEditingTaskId(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                  else if (e.key === "Escape") setEditingTaskId(null);
+                                }}
+                                autoFocus
+                              />
+                            ) : (
+                              <span className={styles.taskText} onClick={() => { setEditingTaskId(task.id); setEditingText(task.text); }}>{task.text}</span>
+                            )}
+                            {task.pomodorosSpent > 0 && <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>}
+                            <button className={isExpanded ? styles.notesToggleActive : styles.notesToggle} onClick={() => setExpandedTaskId(isExpanded ? null : task.id)} title="Toggle notes">
+                              {isExpanded ? "▾" : "✎"}
+                            </button>
+                            <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>×</button>
+                          </div>
+                          {isExpanded && (
+                            <div className={styles.notesPanel}>
+                              <TaskNotes description={task.description} onSave={(html) => onUpdateDescription(task.id, html)} />
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Add Section Button */}
+        <button
+          className={styles.addSectionBtn}
+          onClick={() => onAddSection("New Section")}
+        >
+          + Add Section
+        </button>
 
         {/* Completed Tasks */}
         {completedTasks.length > 0 && (
@@ -437,6 +607,7 @@ export default function Pomodoro({
               <ul className={styles.completedList}>
                 {completedTasks.map((task) => {
                   const isExpanded = expandedTaskId === task.id;
+                  const taskSection = sections.find((s) => s.id === task.sectionId);
                   return (
                     <li key={task.id} className={styles.taskItemWrapper}>
                       <div className={styles.completedTaskItem}>
@@ -453,29 +624,26 @@ export default function Pomodoro({
                             onChange={(e) => setEditingText(e.target.value)}
                             onBlur={() => {
                               const trimmed = editingText.trim();
-                              if (trimmed && trimmed !== task.text) {
-                                onRenameTask(task.id, trimmed);
-                              }
+                              if (trimmed && trimmed !== task.text) onRenameTask(task.id, trimmed);
                               setEditingTaskId(null);
                             }}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                (e.target as HTMLInputElement).blur();
-                              } else if (e.key === "Escape") {
-                                setEditingTaskId(null);
-                              }
+                              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                              else if (e.key === "Escape") setEditingTaskId(null);
                             }}
                             autoFocus
                           />
                         ) : (
                           <span
                             className={styles.taskTextDone}
-                            onClick={() => {
-                              setEditingTaskId(task.id);
-                              setEditingText(task.text);
-                            }}
+                            onClick={() => { setEditingTaskId(task.id); setEditingText(task.text); }}
                           >
                             {task.text}
+                          </span>
+                        )}
+                        {taskSection && (
+                          <span className={styles.sectionLabel} style={{ color: taskSection.color }}>
+                            {taskSection.name}
                           </span>
                         )}
                         {task.pomodorosSpent > 0 && (
@@ -488,16 +656,11 @@ export default function Pomodoro({
                         >
                           {isExpanded ? "▾" : "✎"}
                         </button>
-                        <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
-                          ×
-                        </button>
+                        <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>×</button>
                       </div>
                       {isExpanded && (
                         <div className={styles.notesPanel}>
-                          <TaskNotes
-                            description={task.description}
-                            onSave={(html) => onUpdateDescription(task.id, html)}
-                          />
+                          <TaskNotes description={task.description} onSave={(html) => onUpdateDescription(task.id, html)} />
                         </div>
                       )}
                     </li>
