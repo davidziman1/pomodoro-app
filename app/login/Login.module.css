@@ -91,10 +91,61 @@
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s;
+  width: 100%;
 }
 
 .input:focus {
   border-color: var(--accent-purple);
+}
+
+.nameRow {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.passwordWrapper {
+  position: relative;
+}
+
+.passwordWrapper .input {
+  padding-right: 2.5rem;
+}
+
+.eyeToggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eyeToggle:hover {
+  color: var(--text);
+}
+
+.forgotLink {
+  background: none;
+  border: none;
+  color: var(--accent-purple);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-align: right;
+  padding: 0;
+  margin-top: -0.25rem;
+}
+
+.forgotLink:hover {
+  color: var(--text);
 }
 
 .submitBtn {

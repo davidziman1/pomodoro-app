@@ -9,6 +9,7 @@ import UserMenu from "./UserMenu";
 import ThemeToggle from "./ThemeToggle";
 import PlanMyDay from "./PlanMyDay";
 import ReschedulePrompt from "./ReschedulePrompt";
+import NamePrompt from "./NamePrompt";
 import styles from "./Dashboard.module.css";
 
 export interface Task {
@@ -50,6 +51,7 @@ export default function Dashboard() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [carryoverTasks, setCarryoverTasks] = useState<Task[]>([]);
   const [reschedulePrompt, setReschedulePrompt] = useState<{ date: string; incompleteTasks: Task[] } | null>(null);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
   const prevDateRef = useRef(selectedDate);
   const migrationDone = useRef(false);
   const hasSortOrder = useRef(true);
@@ -213,6 +215,11 @@ export default function Dashboard() {
       await migrateLocalStorage();
       await Promise.all([fetchTasks(), fetchStats()]);
       setLoading(false);
+
+      // Check if user is missing a name
+      if (!user.user_metadata?.full_name) {
+        setShowNamePrompt(true);
+      }
 
       // Plan My Day: check for yesterday's incomplete tasks
       if (selectedDate === todayStr() && sessionStorage.getItem("pomo-planned-today") !== todayStr()) {
@@ -564,6 +571,18 @@ export default function Dashboard() {
     }
   }, [user, stats, selectedDate, tasks, supabase]);
 
+  const handleSaveName = useCallback(
+    async (firstName: string, lastName: string) => {
+      const fullName = (firstName + " " + lastName).trim();
+      await supabase.auth.updateUser({
+        data: { full_name: fullName, display_name: firstName },
+      });
+      setShowNamePrompt(false);
+      window.location.reload();
+    },
+    [supabase]
+  );
+
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -633,6 +652,7 @@ export default function Dashboard() {
           onDismiss={handleDismissReschedule}
         />
       )}
+      {showNamePrompt && <NamePrompt onSave={handleSaveName} />}
     </div>
   );
 }
