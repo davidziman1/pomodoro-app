@@ -1,9 +1,9 @@
 .wrapper {
   padding: 0.5rem 0.75rem 0.75rem;
   background: var(--bg-card);
-  border-radius: 0 0 8px 8px;
-  margin-top: -4px;
-  border-top: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
 }
 
 .toolbar {

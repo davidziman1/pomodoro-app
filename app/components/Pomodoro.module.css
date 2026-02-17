@@ -354,9 +354,10 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 1rem;
-  padding: 0 0.25rem;
+  font-size: 1.25rem;
+  padding: 0.15rem 0.35rem;
   transition: color 0.2s;
+  line-height: 1;
 }
 
 .deleteBtn:hover {
@@ -439,11 +440,11 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.6rem;
-  padding: 0 0.25rem;
-  transition: color 0.2s, transform 0.2s;
-  transform: rotate(-90deg);
-  opacity: 0.5;
+  font-size: 1rem;
+  padding: 0.15rem 0.35rem;
+  transition: color 0.2s, opacity 0.2s;
+  opacity: 0.6;
+  line-height: 1;
 }
 
 .notesToggle:hover {
@@ -453,7 +454,6 @@
 
 .notesToggleActive {
   composes: notesToggle;
-  transform: rotate(0deg);
   opacity: 1;
   color: var(--accent-purple);
 }

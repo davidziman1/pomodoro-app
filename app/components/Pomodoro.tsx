@@ -365,7 +365,7 @@ export default function Pomodoro({
                     onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
                     title="Toggle notes"
                   >
-                    ▼
+                    {isExpanded ? "▾" : "✎"}
                   </button>
                   <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
                     ×
