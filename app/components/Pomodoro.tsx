@@ -280,7 +280,7 @@ export default function Pomodoro({
       {/* Task List */}
       <section className={styles.taskSection}>
         <h2 className={styles.taskHeader}>
-          Tasks <span className={styles.dateLabel}>— {dateLabel}</span>
+          Tasks
         </h2>
         <form className={styles.taskForm} onSubmit={addTask}>
           <input
