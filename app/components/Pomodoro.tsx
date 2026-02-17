@@ -114,6 +114,12 @@ export default function Pomodoro({
   const [renamingSectionText, setRenamingSectionText] = useState("");
   const [colorPickerSectionId, setColorPickerSectionId] = useState<number | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [uncategorizedName, setUncategorizedName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pomo-uncategorized-name") || "Uncategorized";
+    }
+    return "Uncategorized";
+  });
 
   const focusCompleteRef = useRef(onFocusComplete);
   focusCompleteRef.current = onFocusComplete;
@@ -350,7 +356,32 @@ export default function Pomodoro({
                   <span className={isCollapsed ? styles.completedArrow : styles.completedArrowOpen}>▶</span>
                 </button>
                 <span className={styles.sectionDot} style={{ background: "var(--text-muted)" }} />
-                <span className={styles.sectionName}>Uncategorized</span>
+                {renamingSectionId === -1 ? (
+                  <input
+                    className={styles.sectionNameInput}
+                    value={renamingSectionText}
+                    onChange={(e) => setRenamingSectionText(e.target.value)}
+                    onBlur={() => {
+                      const trimmed = renamingSectionText.trim() || "Uncategorized";
+                      setUncategorizedName(trimmed);
+                      localStorage.setItem("pomo-uncategorized-name", trimmed);
+                      setRenamingSectionId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      else if (e.key === "Escape") setRenamingSectionId(null);
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className={styles.sectionName}
+                    onClick={() => { setRenamingSectionId(-1); setRenamingSectionText(uncategorizedName); }}
+                    title="Click to rename"
+                  >
+                    {uncategorizedName}
+                  </span>
+                )}
               </div>
               {!isCollapsed && (
                 <>
