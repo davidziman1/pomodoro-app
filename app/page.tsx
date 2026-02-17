@@ -1,5 +1,5 @@
-import Pomodoro from "./components/Pomodoro";
+import Dashboard from "./components/Dashboard";
 
 export default function Home() {
-  return <Pomodoro />;
+  return <Dashboard />;
 }

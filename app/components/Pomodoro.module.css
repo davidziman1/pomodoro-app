@@ -1,5 +1,4 @@
 .container {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8,11 +7,13 @@
   margin: 0 auto;
 }
 
-.title {
-  font-size: 1.5rem;
+/* Date Heading */
+.dateHeading {
+  font-size: 1.75rem;
   font-weight: 700;
+  color: var(--text);
+  text-align: center;
   margin-bottom: 1.5rem;
-  color: #c0caf5;
 }
 
 /* Mode Tabs */
@@ -30,13 +31,13 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  background: #24283b;
-  color: #565f89;
+  background: var(--bg-card);
+  color: var(--text-muted);
   transition: background 0.25s, color 0.25s;
 }
 
 .modeBtn:hover {
-  color: #c0caf5;
+  color: var(--text);
 }
 
 .modeBtnActive {
@@ -45,17 +46,17 @@
 
 .modeBtnActive[data-mode="focus"] {
   background: rgba(187, 154, 247, 0.15);
-  color: #bb9af7;
+  color: var(--accent-purple);
 }
 
 .modeBtnActive[data-mode="shortBreak"] {
   background: rgba(158, 206, 106, 0.15);
-  color: #9ece6a;
+  color: var(--accent-green);
 }
 
 .modeBtnActive[data-mode="longBreak"] {
   background: rgba(122, 162, 247, 0.15);
-  color: #7aa2f7;
+  color: var(--accent-blue);
 }
 
 /* Timer Ring */
@@ -74,7 +75,7 @@
 
 .trackRing {
   fill: none;
-  stroke: #24283b;
+  stroke: var(--bg-card);
   stroke-width: 8;
 }
 
@@ -98,7 +99,7 @@
   font-size: 3.5rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #c0caf5;
+  color: var(--text);
 }
 
 .modeLabel {
@@ -133,17 +134,17 @@
 
 .startBtn {
   composes: controlBtn;
-  color: #1a1b26;
+  color: var(--bg);
 }
 
 .resetBtn {
   composes: controlBtn;
-  background: #24283b;
-  color: #565f89;
+  background: var(--bg-card);
+  color: var(--text-muted);
 }
 
 .resetBtn:hover {
-  color: #c0caf5;
+  color: var(--text);
 }
 
 /* Stats */
@@ -162,12 +163,12 @@
 .statValue {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #c0caf5;
+  color: var(--text);
 }
 
 .statLabel {
   font-size: 0.75rem;
-  color: #565f89;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -180,7 +181,7 @@
 .taskHeader {
   font-size: 1rem;
   font-weight: 600;
-  color: #c0caf5;
+  color: var(--text);
   margin-bottom: 0.75rem;
 }
 
@@ -193,10 +194,10 @@
 .taskInput {
   flex: 1;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #24283b;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #24283b;
-  color: #c0caf5;
+  background: var(--bg-card);
+  color: var(--text);
   font-family: inherit;
   font-size: 0.875rem;
   outline: none;
@@ -204,15 +205,15 @@
 }
 
 .taskInput:focus {
-  border-color: #bb9af7;
+  border-color: var(--accent-purple);
 }
 
 .addBtn {
   padding: 0.6rem 1rem;
   border: none;
   border-radius: 8px;
-  background: #bb9af7;
-  color: #1a1b26;
+  background: var(--accent-purple);
+  color: var(--bg);
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 600;
@@ -222,6 +223,34 @@
 
 .addBtn:hover {
   opacity: 0.85;
+}
+
+/* Progress Bar */
+.progressWrapper {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-card);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent-green);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progressLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+  text-align: right;
 }
 
 .taskList {
@@ -236,14 +265,41 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 0.75rem;
-  background: #24283b;
+  background: var(--bg-card);
   border-radius: 8px;
+  cursor: grab;
+  transition: opacity 0.15s, border-color 0.15s;
+  border: 2px solid transparent;
+}
+
+.taskItem:active {
+  cursor: grabbing;
+}
+
+.taskItemDragging {
+  opacity: 0.4;
+}
+
+.taskItemDragOver {
+  border-color: var(--accent-purple);
+}
+
+.dragHandle {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
 }
 
 .taskCheckbox {
   width: 18px;
   height: 18px;
-  accent-color: #bb9af7;
+  accent-color: var(--accent-purple);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -251,25 +307,25 @@
 .taskText {
   flex: 1;
   font-size: 0.875rem;
-  color: #c0caf5;
+  color: var(--text);
 }
 
 .taskTextDone {
   composes: taskText;
   text-decoration: line-through;
-  color: #565f89;
+  color: var(--text-muted);
 }
 
 .pomCount {
   font-size: 0.75rem;
-  color: #bb9af7;
+  color: var(--accent-purple);
   white-space: nowrap;
 }
 
 .deleteBtn {
   background: none;
   border: none;
-  color: #565f89;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 1rem;
   padding: 0 0.25rem;
@@ -277,12 +333,78 @@
 }
 
 .deleteBtn:hover {
-  color: #f7768e;
+  color: var(--accent-red);
+}
+
+.dateLabel {
+  font-weight: 400;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Completed Section */
+.completedSection {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.completedHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.completedToggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0;
+  transition: color 0.2s;
+}
+
+.completedToggle:hover {
+  color: var(--text);
+}
+
+.completedArrow {
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+}
+
+.completedArrowOpen {
+  composes: completedArrow;
+  transform: rotate(90deg);
+}
+
+.completedList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.completedTaskItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-card);
+  border-radius: 8px;
+  opacity: 0.7;
+  border: 2px solid transparent;
 }
 
 .hint {
   text-align: center;
   font-size: 0.7rem;
-  color: #565f89;
+  color: var(--text-muted);
   margin-top: 1.5rem;
 }

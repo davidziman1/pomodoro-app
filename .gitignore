@@ -32,3 +32,5 @@ next-env.d.ts
 .claude/
 .vscode/
 set-path.ps1
+
+.vercel

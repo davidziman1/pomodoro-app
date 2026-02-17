@@ -1,16 +1,8 @@
-.main {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-}
-
 .card {
-  background: #24283b;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 1.5rem 1.75rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 25px 50px -12px var(--shadow);
   max-width: 400px;
   width: 100%;
   outline: none;
@@ -24,9 +16,9 @@
 }
 
 .navBtn {
-  background: #414868;
+  background: var(--bg-hover);
   border: none;
-  color: #c0caf5;
+  color: var(--text);
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -40,18 +32,18 @@
 }
 
 .navBtn:hover {
-  background: #565f89;
+  background: var(--text-muted);
 }
 
 .navBtn:focus-visible {
-  outline: 2px solid #7aa2f7;
+  outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
 }
 
 .todayBtn {
-  background: #414868;
+  background: var(--bg-hover);
   border: none;
-  color: #a9b1d6;
+  color: var(--text-subtle);
   padding: 4px 12px;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -61,18 +53,18 @@
 }
 
 .todayBtn:hover {
-  background: #565f89;
+  background: var(--text-muted);
 }
 
 .todayBtn:focus-visible {
-  outline: 2px solid #7aa2f7;
+  outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
 }
 
 .title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #a9b1d6;
+  color: var(--text-subtle);
 }
 
 .weekdays {
@@ -86,7 +78,7 @@
   text-align: center;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #565f89;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 
@@ -99,15 +91,22 @@
 .day {
   aspect-ratio: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
   font-size: 0.9rem;
   transition: background 0.15s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  position: relative;
+  padding: 0;
 }
 
 .dayCurrent {
-  color: #c0caf5;
+  color: var(--text);
 }
 
 .dayCurrent:hover {
@@ -115,15 +114,44 @@
 }
 
 .dayOther {
-  color: #565f89;
+  color: var(--text-muted);
 }
 
 .dayToday {
-  background: #7aa2f7;
-  color: #1a1b26;
+  background: var(--accent-blue);
+  color: var(--bg);
   font-weight: 700;
 }
 
 .dayToday:hover {
   background: #89b4fa;
+}
+
+.daySelected {
+  outline: 2px solid var(--accent-purple);
+  outline-offset: -2px;
+}
+
+.daySelected:not(.dayToday) {
+  background: rgba(187, 154, 247, 0.15);
+}
+
+.dayDragOver {
+  background: rgba(187, 154, 247, 0.2);
+  outline: 2px solid var(--accent-purple);
+  outline-offset: -2px;
+}
+
+.taskDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-purple);
+  position: absolute;
+  bottom: 4px;
+}
+
+.taskDotDone {
+  composes: taskDot;
+  background: var(--accent-green);
 }

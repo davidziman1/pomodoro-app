@@ -2,21 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import styles from "./Pomodoro.module.css";
+import type { Task, Stats } from "./Dashboard";
 
 type Mode = "focus" | "shortBreak" | "longBreak";
-
-interface Task {
-  id: number;
-  text: string;
-  completed: boolean;
-  pomodorosSpent: number;
-}
-
-interface Stats {
-  totalFocusMinutes: number;
-  sessionsToday: number;
-  date: string;
-}
 
 const DURATIONS: Record<Mode, number> = {
   focus: 25 * 60,
@@ -38,34 +26,6 @@ const ACCENT: Record<Mode, string> = {
 
 const RADIUS = 115;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function loadTasks(): Task[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem("pomo-tasks");
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function loadStats(): Stats {
-  const empty: Stats = { totalFocusMinutes: 0, sessionsToday: 0, date: todayStr() };
-  if (typeof window === "undefined") return empty;
-  try {
-    const raw = localStorage.getItem("pomo-stats");
-    if (!raw) return empty;
-    const parsed: Stats = JSON.parse(raw);
-    if (parsed.date !== todayStr()) return empty;
-    return parsed;
-  } catch {
-    return empty;
-  }
-}
 
 function playBeep() {
   try {
@@ -94,33 +54,42 @@ function playBeep() {
   } catch {}
 }
 
-export default function Pomodoro() {
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+interface PomodoroProps {
+  tasks: Task[];
+  stats: Stats;
+  selectedDate: string;
+  onAddTask: (text: string) => void;
+  onToggleTask: (id: number) => void;
+  onDeleteTask: (id: number) => void;
+  onReorderTasks: (fromIndex: number, toIndex: number) => void;
+  onFocusComplete: () => void;
+}
+
+export default function Pomodoro({
+  tasks,
+  stats,
+  selectedDate,
+  onAddTask,
+  onToggleTask,
+  onDeleteTask,
+  onReorderTasks,
+  onFocusComplete,
+}: PomodoroProps) {
   const [mode, setMode] = useState<Mode>("focus");
   const [timeLeft, setTimeLeft] = useState(DURATIONS.focus);
   const [isRunning, setIsRunning] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [stats, setStats] = useState<Stats>({ totalFocusMinutes: 0, sessionsToday: 0, date: todayStr() });
   const [newTask, setNewTask] = useState("");
-  const [mounted, setMounted] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [completedOpen, setCompletedOpen] = useState(true);
 
-  const activeTaskRef = useRef<number | null>(null);
-
-  // Hydrate from localStorage after mount
-  useEffect(() => {
-    setTasks(loadTasks());
-    setStats(loadStats());
-    setMounted(true);
-  }, []);
-
-  // Persist tasks
-  useEffect(() => {
-    if (mounted) localStorage.setItem("pomo-tasks", JSON.stringify(tasks));
-  }, [tasks, mounted]);
-
-  // Persist stats
-  useEffect(() => {
-    if (mounted) localStorage.setItem("pomo-stats", JSON.stringify(stats));
-  }, [stats, mounted]);
+  const focusCompleteRef = useRef(onFocusComplete);
+  focusCompleteRef.current = onFocusComplete;
 
   // Countdown
   useEffect(() => {
@@ -132,23 +101,8 @@ export default function Pomodoro() {
           setIsRunning(false);
           playBeep();
 
-          // Update stats if focus session completed
           if (mode === "focus") {
-            setStats((s) => ({
-              ...s,
-              totalFocusMinutes: s.totalFocusMinutes + DURATIONS.focus / 60,
-              sessionsToday: s.sessionsToday + 1,
-              date: todayStr(),
-            }));
-
-            // Increment pomodoros on first incomplete task
-            setTasks((prev) => {
-              const idx = prev.findIndex((t) => !t.completed);
-              if (idx === -1) return prev;
-              const copy = [...prev];
-              copy[idx] = { ...copy[idx], pomodorosSpent: copy[idx].pomodorosSpent + 1 };
-              return copy;
-            });
+            focusCompleteRef.current();
           }
 
           return 0;
@@ -197,16 +151,8 @@ export default function Pomodoro() {
     e.preventDefault();
     const text = newTask.trim();
     if (!text) return;
-    setTasks((prev) => [...prev, { id: Date.now(), text, completed: false, pomodorosSpent: 0 }]);
+    onAddTask(text);
     setNewTask("");
-  };
-
-  const toggleTask = (id: number) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
-  };
-
-  const deleteTask = (id: number) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
   // Derived values
@@ -216,9 +162,36 @@ export default function Pomodoro() {
   const dashOffset = CIRCUMFERENCE * (1 - progress);
   const accent = ACCENT[mode];
 
+  // Split tasks into incomplete and completed
+  const incompleteTasks = tasks.filter((t) => !t.completed);
+  const completedTasks = tasks.filter((t) => t.completed);
+  const completedCount = completedTasks.length;
+  const totalCount = tasks.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  // Format selected date for display
+  const isToday = selectedDate === todayStr();
+  const dateHeading = isToday
+    ? "Today"
+    : new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      });
+
+  // Short date label for task header
+  const dateLabel = isToday
+    ? "Today"
+    : new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Pomodoro Dashboard</h1>
+      {/* Date Heading */}
+      <h2 className={styles.dateHeading}>{dateHeading}</h2>
 
       {/* Mode Tabs */}
       <div className={styles.modes}>
@@ -275,22 +248,24 @@ export default function Pomodoro() {
       {/* Stats */}
       <div className={styles.stats}>
         <div className={styles.stat}>
-          <div className={styles.statValue}>{mounted ? stats.sessionsToday : 0}</div>
+          <div className={styles.statValue}>{stats.sessionsCompleted}</div>
           <div className={styles.statLabel}>Sessions</div>
         </div>
         <div className={styles.stat}>
-          <div className={styles.statValue}>{mounted ? stats.totalFocusMinutes : 0}m</div>
+          <div className={styles.statValue}>{stats.totalFocusMinutes}m</div>
           <div className={styles.statLabel}>Focus Time</div>
         </div>
         <div className={styles.stat}>
-          <div className={styles.statValue}>{mounted ? tasks.filter((t) => t.completed).length : 0}</div>
+          <div className={styles.statValue}>{completedCount}</div>
           <div className={styles.statLabel}>Tasks Done</div>
         </div>
       </div>
 
       {/* Task List */}
       <section className={styles.taskSection}>
-        <h2 className={styles.taskHeader}>Tasks</h2>
+        <h2 className={styles.taskHeader}>
+          Tasks <span className={styles.dateLabel}>— {dateLabel}</span>
+        </h2>
         <form className={styles.taskForm} onSubmit={addTask}>
           <input
             className={styles.taskInput}
@@ -302,27 +277,117 @@ export default function Pomodoro() {
             Add
           </button>
         </form>
-        <ul className={styles.taskList}>
-          {tasks.map((task) => (
-            <li key={task.id} className={styles.taskItem}>
-              <input
-                type="checkbox"
-                className={styles.taskCheckbox}
-                checked={task.completed}
-                onChange={() => toggleTask(task.id)}
+
+        {/* Progress Bar */}
+        {totalCount > 0 && (
+          <div className={styles.progressWrapper}>
+            <div className={styles.progressBar}>
+              <div
+                className={styles.progressFill}
+                style={{ width: `${progressPercent}%` }}
               />
-              <span className={task.completed ? styles.taskTextDone : styles.taskText}>
-                {task.text}
-              </span>
-              {task.pomodorosSpent > 0 && (
-                <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
-              )}
-              <button className={styles.deleteBtn} onClick={() => deleteTask(task.id)}>
-                ×
-              </button>
-            </li>
-          ))}
+            </div>
+            <div className={styles.progressLabel}>
+              {completedCount} of {totalCount} done
+            </div>
+          </div>
+        )}
+
+        {/* Incomplete Tasks */}
+        <ul className={styles.taskList}>
+          {incompleteTasks.map((task) => {
+            const originalIndex = tasks.indexOf(task);
+            return (
+              <li
+                key={task.id}
+                className={[
+                  styles.taskItem,
+                  dragIndex === originalIndex ? styles.taskItemDragging : "",
+                  dragOverIndex === originalIndex ? styles.taskItemDragOver : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                draggable
+                onDragStart={(e) => {
+                  setDragIndex(originalIndex);
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("application/pomo-task", String(task.id));
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragOverIndex(originalIndex);
+                }}
+                onDragLeave={() => setDragOverIndex(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragIndex !== null && dragIndex !== originalIndex) {
+                    onReorderTasks(dragIndex, originalIndex);
+                  }
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }}
+              >
+                <span className={styles.dragHandle}>⠿</span>
+                <input
+                  type="checkbox"
+                  className={styles.taskCheckbox}
+                  checked={task.completed}
+                  onChange={() => onToggleTask(task.id)}
+                />
+                <span className={styles.taskText}>{task.text}</span>
+                {task.pomodorosSpent > 0 && (
+                  <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
+                )}
+                <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
+                  ×
+                </button>
+              </li>
+            );
+          })}
         </ul>
+
+        {/* Completed Tasks */}
+        {completedTasks.length > 0 && (
+          <div className={styles.completedSection}>
+            <div className={styles.completedHeader}>
+              <button
+                className={styles.completedToggle}
+                onClick={() => setCompletedOpen((o) => !o)}
+              >
+                <span className={completedOpen ? styles.completedArrowOpen : styles.completedArrow}>
+                  ▶
+                </span>
+                Completed ({completedTasks.length})
+              </button>
+            </div>
+            {completedOpen && (
+              <ul className={styles.completedList}>
+                {completedTasks.map((task) => (
+                  <li key={task.id} className={styles.completedTaskItem}>
+                    <input
+                      type="checkbox"
+                      className={styles.taskCheckbox}
+                      checked={task.completed}
+                      onChange={() => onToggleTask(task.id)}
+                    />
+                    <span className={styles.taskTextDone}>{task.text}</span>
+                    {task.pomodorosSpent > 0 && (
+                      <span className={styles.pomCount}>{task.pomodorosSpent} pom</span>
+                    )}
+                    <button className={styles.deleteBtn} onClick={() => onDeleteTask(task.id)}>
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </section>
 
       <p className={styles.hint}>Space to start/pause · R to reset</p>
