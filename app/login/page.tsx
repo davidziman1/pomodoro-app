@@ -103,8 +103,13 @@ export default function LoginPage() {
 
   return (
     <div className={styles.container}>
+      <div className={styles.hero}>
+        <h1 className={styles.heroTitle}>Productivity Dashboard</h1>
+        <p className={styles.heroDesc}>
+          Plan your day with tasks, stay focused with a Pomodoro timer, and track your progress on a calendar. Add notes, reschedule by dragging, and build better habits.
+        </p>
+      </div>
       <div className={styles.card}>
-        <h1 className={styles.title}>Pomodoro Dashboard</h1>
         <p className={styles.subtitle}>
           {mode === "login" ? "Welcome back" : "Create your account"}
         </p>
