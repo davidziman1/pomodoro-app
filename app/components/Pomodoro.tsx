@@ -90,6 +90,7 @@ export default function Pomodoro({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [completedOpen, setCompletedOpen] = useState(true);
+  const [timerVisible, setTimerVisible] = useState(true);
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
 
   const focusCompleteRef = useRef(onFocusComplete);
@@ -194,9 +195,19 @@ export default function Pomodoro({
 
   return (
     <div className={styles.container}>
-      {/* Date Heading */}
-      <h2 className={styles.dateHeading}>{dateHeading}</h2>
+      {/* Date Heading + Timer Toggle */}
+      <div className={styles.dateRow}>
+        <h2 className={styles.dateHeading}>{dateHeading}</h2>
+        <button
+          className={styles.timerToggle}
+          onClick={() => setTimerVisible((v) => !v)}
+          title={timerVisible ? "Hide timer" : "Show timer"}
+        >
+          {timerVisible ? "Hide Timer" : "Show Timer"}
+        </button>
+      </div>
 
+      {timerVisible && <>
       {/* Mode Tabs */}
       <div className={styles.modes}>
         {(["focus", "shortBreak", "longBreak"] as Mode[]).map((m) => (
@@ -264,6 +275,7 @@ export default function Pomodoro({
           <div className={styles.statLabel}>Tasks Done</div>
         </div>
       </div>
+      </>}
 
       {/* Task List */}
       <section className={styles.taskSection}>

@@ -8,12 +8,39 @@
 }
 
 /* Date Heading */
+.dateRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
 .dateHeading {
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--text);
   text-align: center;
-  margin-bottom: 1.5rem;
+}
+
+.timerToggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.timerToggle:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
 }
 
 /* Mode Tabs */
