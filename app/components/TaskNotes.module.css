@@ -64,6 +64,15 @@
   max-height: 200px;
   overflow-y: auto;
   outline: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  background: var(--bg);
+  transition: border-color 0.15s;
+}
+
+.editor:focus-within {
+  border-color: var(--accent-purple);
 }
 
 .editor :global(.ProseMirror) {
