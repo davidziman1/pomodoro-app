@@ -52,6 +52,8 @@ export default function Dashboard() {
   const [carryoverTasks, setCarryoverTasks] = useState<Task[]>([]);
   const [reschedulePrompt, setReschedulePrompt] = useState<{ date: string; incompleteTasks: Task[] } | null>(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
   const prevDateRef = useRef(selectedDate);
   const migrationDone = useRef(false);
   const hasSortOrder = useRef(true);
@@ -583,6 +585,34 @@ export default function Dashboard() {
     [supabase]
   );
 
+  const displayName = (
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.display_name ||
+    user?.email?.split("@")[0] ||
+    "Pomodoro"
+  ).split(" ")[0];
+
+  const handleNameClick = useCallback(() => {
+    setEditName(user?.user_metadata?.full_name || "");
+    setEditingName(true);
+  }, [user]);
+
+  const handleNameSave = useCallback(async () => {
+    const trimmed = editName.trim();
+    if (!trimmed) {
+      setEditingName(false);
+      return;
+    }
+    await supabase.auth.updateUser({
+      data: {
+        full_name: trimmed,
+        display_name: trimmed.split(" ")[0],
+      },
+    });
+    setEditingName(false);
+    window.location.reload();
+  }, [editName, supabase]);
+
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -595,15 +625,29 @@ export default function Dashboard() {
     <div>
       <header className={styles.topBar}>
         <div className={styles.topBarLeft}>
-          <h1 className={styles.logo}>
-            {(
-              user?.user_metadata?.full_name ||
-              user?.user_metadata?.display_name ||
-              user?.email?.split("@")[0] ||
-              "Pomodoro"
-            ).split(" ")[0]}
-            &apos;s Dashboard
-          </h1>
+          {editingName ? (
+            <form
+              className={styles.logoEditForm}
+              onSubmit={(e) => { e.preventDefault(); handleNameSave(); }}
+            >
+              <input
+                className={styles.logoEditInput}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={handleNameSave}
+                autoFocus
+                placeholder="Your name"
+              />
+            </form>
+          ) : (
+            <h1
+              className={styles.logo}
+              onClick={handleNameClick}
+              title="Click to edit your name"
+            >
+              {displayName}&apos;s Dashboard
+            </h1>
+          )}
           <ThemeToggle />
         </div>
         <UserMenu />

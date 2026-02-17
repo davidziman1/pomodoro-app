@@ -38,6 +38,32 @@
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--text);
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.125rem 0.375rem;
+  margin: -0.125rem -0.375rem;
+  transition: background 0.15s;
+}
+
+.logo:hover {
+  background: var(--bg-hover);
+}
+
+.logoEditForm {
+  display: flex;
+}
+
+.logoEditInput {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--accent-purple);
+  border-radius: 6px;
+  padding: 0.125rem 0.375rem;
+  font-family: inherit;
+  outline: none;
+  width: 200px;
 }
 
 .errorBar {
