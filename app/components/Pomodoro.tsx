@@ -67,16 +67,16 @@ export default function Pomodoro({
   const [dragOverSectionId, setDragOverSectionId] = useState<number | null | undefined>(undefined);
   const [dragSectionIndex, setDragSectionIndex] = useState<number | null>(null);
   const [dragOverSectionIndex, setDragOverSectionIndex] = useState<number | null>(null);
-  const [uncategorizedNames, setUncategorizedNames] = useState<Record<string, string>>(() => {
-    if (typeof window !== "undefined") return loadJsonMap("pomo-uncategorized-names");
-    return {};
+  const [uncategorizedName, setUncategorizedName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pomo-uncategorized-name") || "Uncategorized";
+    }
+    return "Uncategorized";
   });
   const [sectionNameOverrides, setSectionNameOverrides] = useState<Record<string, string>>(() => {
     if (typeof window !== "undefined") return loadJsonMap("pomo-section-name-overrides");
     return {};
   });
-
-  const uncategorizedName = uncategorizedNames[selectedDate] || "Uncategorized";
 
   const getSectionDisplayName = (section: Section) => {
     return sectionNameOverrides[`${selectedDate}:${section.id}`] || section.name;
@@ -232,11 +232,8 @@ export default function Pomodoro({
                     onChange={(e) => setRenamingSectionText(e.target.value)}
                     onBlur={() => {
                       const trimmed = renamingSectionText.trim() || "Uncategorized";
-                      setUncategorizedNames((prev) => {
-                        const next = { ...prev, [selectedDate]: trimmed };
-                        localStorage.setItem("pomo-uncategorized-names", JSON.stringify(next));
-                        return next;
-                      });
+                      setUncategorizedName(trimmed);
+                      localStorage.setItem("pomo-uncategorized-name", trimmed);
                       setRenamingSectionId(null);
                     }}
                     onKeyDown={(e) => {

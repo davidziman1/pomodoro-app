@@ -709,6 +709,8 @@ export default function Dashboard() {
         updated[newDate] = { ...target, total: target.total + 1 };
         return updated;
       });
+      // Navigate to the target date so the user sees where the task landed
+      setSelectedDate(newDate);
     },
     [user, selectedDate, supabase]
   );
