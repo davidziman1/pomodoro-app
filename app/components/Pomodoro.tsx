@@ -11,6 +11,12 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function loadJsonMap(key: string): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch { return {}; }
+}
+
 interface PomodoroProps {
   tasks: Task[];
   selectedDate: string;
@@ -61,12 +67,20 @@ export default function Pomodoro({
   const [dragOverSectionId, setDragOverSectionId] = useState<number | null | undefined>(undefined);
   const [dragSectionIndex, setDragSectionIndex] = useState<number | null>(null);
   const [dragOverSectionIndex, setDragOverSectionIndex] = useState<number | null>(null);
-  const [uncategorizedName, setUncategorizedName] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("pomo-uncategorized-name") || "Uncategorized";
-    }
-    return "Uncategorized";
+  const [uncategorizedNames, setUncategorizedNames] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") return loadJsonMap("pomo-uncategorized-names");
+    return {};
   });
+  const [sectionNameOverrides, setSectionNameOverrides] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") return loadJsonMap("pomo-section-name-overrides");
+    return {};
+  });
+
+  const uncategorizedName = uncategorizedNames[selectedDate] || "Uncategorized";
+
+  const getSectionDisplayName = (section: Section) => {
+    return sectionNameOverrides[`${selectedDate}:${section.id}`] || section.name;
+  };
 
   const addTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,7 +176,7 @@ export default function Pomodoro({
             <option value="">{uncategorizedName}</option>
             {sections.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name}
+                {getSectionDisplayName(s)}
               </option>
             ))}
             <option value="__new__">+ New Section</option>
@@ -171,7 +185,7 @@ export default function Pomodoro({
         </form>
 
         {/* Uncategorized Section */}
-        {(() => {
+        {tasks.some((t) => t.sectionId == null) && (() => {
           const uncategorized = incompleteTasks.filter((t) => t.sectionId == null);
           const isCollapsed = collapsedSections.has("uncategorized");
           return (
@@ -218,8 +232,11 @@ export default function Pomodoro({
                     onChange={(e) => setRenamingSectionText(e.target.value)}
                     onBlur={() => {
                       const trimmed = renamingSectionText.trim() || "Uncategorized";
-                      setUncategorizedName(trimmed);
-                      localStorage.setItem("pomo-uncategorized-name", trimmed);
+                      setUncategorizedNames((prev) => {
+                        const next = { ...prev, [selectedDate]: trimmed };
+                        localStorage.setItem("pomo-uncategorized-names", JSON.stringify(next));
+                        return next;
+                      });
                       setRenamingSectionId(null);
                     }}
                     onKeyDown={(e) => {
@@ -411,7 +428,14 @@ export default function Pomodoro({
                     onChange={(e) => setRenamingSectionText(e.target.value)}
                     onBlur={() => {
                       const trimmed = renamingSectionText.trim();
-                      if (trimmed && trimmed !== section.name) onRenameSection(section.id, trimmed);
+                      if (trimmed) {
+                        const key = `${selectedDate}:${section.id}`;
+                        setSectionNameOverrides((prev) => {
+                          const next = { ...prev, [key]: trimmed };
+                          localStorage.setItem("pomo-section-name-overrides", JSON.stringify(next));
+                          return next;
+                        });
+                      }
                       setRenamingSectionId(null);
                     }}
                     onKeyDown={(e) => {
@@ -423,10 +447,10 @@ export default function Pomodoro({
                 ) : (
                   <span
                     className={styles.sectionName}
-                    onClick={() => { setRenamingSectionId(section.id); setRenamingSectionText(section.name); }}
+                    onClick={() => { setRenamingSectionId(section.id); setRenamingSectionText(getSectionDisplayName(section)); }}
                     title="Click to rename"
                   >
-                    {section.name}
+                    {getSectionDisplayName(section)}
                   </span>
                 )}
                 <button className={styles.sectionDeleteBtn} onClick={() => onDeleteSection(section.id)} title="Delete section">×</button>
@@ -560,7 +584,7 @@ export default function Pomodoro({
                         )}
                         {taskSection && (
                           <span className={styles.sectionLabel} style={{ color: taskSection.color }}>
-                            {taskSection.name}
+                            {getSectionDisplayName(taskSection)}
                           </span>
                         )}
                         <button
