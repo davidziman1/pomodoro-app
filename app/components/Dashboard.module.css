@@ -102,6 +102,26 @@
   padding: 1.5rem;
 }
 
+.timerToggle {
+  display: block;
+  margin: 1rem auto 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.timerToggle:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
 @media (max-width: 900px) {
   .content {
     grid-template-columns: 1fr;

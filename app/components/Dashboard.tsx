@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "./AuthProvider";
 import Pomodoro from "./Pomodoro";
 import Calendar from "./Calendar";
+import Timer from "./Timer";
 import UserMenu from "./UserMenu";
 import ThemeToggle from "./ThemeToggle";
 import PlanMyDay from "./PlanMyDay";
@@ -61,6 +62,12 @@ export default function Dashboard() {
   const [carryoverTasks, setCarryoverTasks] = useState<Task[]>([]);
   const [reschedulePrompt, setReschedulePrompt] = useState<{ date: string; incompleteTasks: Task[] } | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
+  const [timerVisible, setTimerVisible] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pomo-timer-visible") === "true";
+    }
+    return false;
+  });
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState("");
@@ -523,8 +530,8 @@ export default function Dashboard() {
   // --- Section CRUD ---
 
   const addSection = useCallback(
-    async (name: string) => {
-      if (!user) return;
+    async (name: string): Promise<number | null> => {
+      if (!user) return null;
       const nextOrder = sections.length > 0
         ? Math.max(...sections.map((s) => s.sortOrder)) + 1
         : 0;
@@ -537,14 +544,16 @@ export default function Dashboard() {
 
       if (insertError) {
         setError("Failed to add section: " + insertError.message);
-        return;
+        return null;
       }
       if (data) {
         setSections((prev) => [
           ...prev,
           { id: data.id, name: data.name, color: data.color, sortOrder: data.sort_order },
         ]);
+        return data.id;
       }
+      return null;
     },
     [user, sections, supabase]
   );
@@ -722,25 +731,7 @@ export default function Dashboard() {
       },
       { onConflict: "user_id,date" }
     );
-
-    const firstIncomplete = tasks.find((t) => !t.completed);
-    if (firstIncomplete) {
-      const newCount = firstIncomplete.pomodorosSpent + 1;
-      await supabase
-        .from("tasks")
-        .update({ pomodoros_spent: newCount })
-        .eq("id", firstIncomplete.id)
-        .eq("user_id", user.id);
-
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === firstIncomplete.id
-            ? { ...t, pomodorosSpent: newCount }
-            : t
-        )
-      );
-    }
-  }, [user, stats, selectedDate, tasks, supabase]);
+  }, [user, stats, selectedDate, supabase]);
 
   const handleSaveName = useCallback(
     async (firstName: string, lastName: string) => {
@@ -831,7 +822,6 @@ export default function Dashboard() {
         <main className={styles.pomodoroPane}>
           <Pomodoro
             tasks={tasks}
-            stats={stats}
             selectedDate={selectedDate}
             sections={sections}
             onAddTask={addTask}
@@ -840,7 +830,6 @@ export default function Dashboard() {
             onReorderTasks={reorderTasks}
             onRenameTask={renameTask}
             onUpdateDescription={updateTaskDescription}
-            onFocusComplete={onFocusComplete}
             onAddSection={addSection}
             onRenameSection={renameSection}
             onUpdateSectionColor={updateSectionColor}
@@ -857,6 +846,19 @@ export default function Dashboard() {
             onMonthChange={fetchTaskCounts}
             onDropTask={rescheduleTask}
           />
+          <button
+            className={styles.timerToggle}
+            onClick={() => {
+              setTimerVisible((v) => {
+                const next = !v;
+                localStorage.setItem("pomo-timer-visible", String(next));
+                return next;
+              });
+            }}
+          >
+            {timerVisible ? "Hide Timer" : "Show Timer"}
+          </button>
+          {timerVisible && <Timer stats={stats} onFocusComplete={onFocusComplete} />}
         </aside>
       </div>
       {showPlanModal && carryoverTasks.length > 0 && (

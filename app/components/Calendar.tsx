@@ -295,7 +295,7 @@ export default function Calendar({
               </option>
             ))}
           </select>
-          {!isCurrentMonth && (
+          {selectedDate !== formatDateStr(today.getFullYear(), today.getMonth(), today.getDate()) && (
             <button
               type="button"
               onClick={goToday}

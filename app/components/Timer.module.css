@@ -1,0 +1,170 @@
+.timerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0 0;
+}
+
+/* Mode Tabs */
+.modes {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.modeBtn {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  transition: background 0.25s, color 0.25s;
+}
+
+.modeBtn:hover {
+  color: var(--text);
+}
+
+.modeBtnActive {
+  composes: modeBtn;
+}
+
+.modeBtnActive[data-mode="focus"] {
+  background: rgba(187, 154, 247, 0.15);
+  color: var(--accent-purple);
+}
+
+.modeBtnActive[data-mode="shortBreak"] {
+  background: rgba(158, 206, 106, 0.15);
+  color: var(--accent-green);
+}
+
+.modeBtnActive[data-mode="longBreak"] {
+  background: rgba(122, 162, 247, 0.15);
+  color: var(--accent-blue);
+}
+
+/* Timer Ring */
+.timerWrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin-bottom: 1rem;
+}
+
+.timerSvg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.trackRing {
+  fill: none;
+  stroke: var(--bg-card);
+  stroke-width: 8;
+}
+
+.progressRing {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s linear, stroke 0.4s;
+}
+
+.timerDisplay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.time {
+  font-size: 2.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.modeLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.25rem;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.controlBtn {
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.controlBtn:active {
+  transform: scale(0.97);
+}
+
+.startBtn {
+  composes: controlBtn;
+  color: var(--bg);
+}
+
+.resetBtn {
+  composes: controlBtn;
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.resetBtn:hover {
+  color: var(--text);
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stat {
+  text-align: center;
+}
+
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hint {
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
